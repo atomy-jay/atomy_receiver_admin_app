@@ -32,19 +32,22 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # The Gradle wrapper jar/scripts are not committed. Generate them in an
-      # empty dir (so the Flutter settings.gradle is NOT evaluated — that would
-      # need a Flutter SDK path), then copy only the wrapper artifacts in.
+      # The Gradle wrapper jar/scripts are not committed. The GitHub runner has
+      # no global `gradle`, so we generate a throwaway Flutter project (Flutter
+      # IS available here) and copy its wrapper files in. Our own
+      # gradle-wrapper.properties (pinned to 8.10.2) is kept as-is.
       - name: Ensure Gradle wrapper
         run: |
           if [ ! -f android/gradlew ] || [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            echo "Gradle wrapper missing — generating from a temporary Flutter project"
             tmp="$(mktemp -d)"
-            ( cd "$tmp" && gradle wrapper --gradle-version 8.10.2 --distribution-type all )
+            flutter create --platforms=android --project-name wrappersrc "$tmp/wrappersrc"
             mkdir -p android/gradle/wrapper
-            cp "$tmp/gradlew" android/gradlew
-            cp "$tmp/gradlew.bat" android/gradlew.bat 2>/dev/null || true
-            cp "$tmp/gradle/wrapper/gradle-wrapper.jar" android/gradle/wrapper/gradle-wrapper.jar
+            cp "$tmp/wrappersrc/android/gradlew" android/gradlew
+            cp "$tmp/wrappersrc/android/gradlew.bat" android/gradlew.bat 2>/dev/null || true
+            cp "$tmp/wrappersrc/android/gradle/wrapper/gradle-wrapper.jar" android/gradle/wrapper/gradle-wrapper.jar
             chmod +x android/gradlew
+            echo "Wrapper files installed."
           fi
 
       - name: Build release APK
