@@ -54,7 +54,26 @@ jobs:
           fi
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee /tmp/build.log
+
+      # Runs even on failure — writes the compiler/build errors to the run's
+      # Summary page (readable HTML), so failures can be diagnosed without
+      # digging through the collapsed live-log viewer.
+      - name: Publish build log to summary
+        if: always()
+        run: |
+          {
+            echo '## Dart / compile error lines';
+            echo '```';
+            grep -nE "Error:|\.dart:[0-9]|Target .* failed|FAILURE:|What went wrong|Exception|error:" /tmp/build.log | head -n 120 || echo "(no matching lines)";
+            echo '```';
+            echo '## Build log (last 160 lines)';
+            echo '```';
+            tail -n 160 /tmp/build.log 2>/dev/null || echo "(no log captured)";
+            echo '```';
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
