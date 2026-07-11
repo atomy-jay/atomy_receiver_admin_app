@@ -6,8 +6,9 @@ plugins {
 
 android {
     namespace = "com.atomy.receiveradmin"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // mobile_scanner requires compileSdk 36 and NDK 27 (backward compatible).
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

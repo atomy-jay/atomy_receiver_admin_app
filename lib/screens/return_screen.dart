@@ -134,7 +134,7 @@ class _ReturnScreenState extends State<ReturnScreen> {
                 ],
                 const SizedBox(height: 18),
                 DropdownButtonFormField<String>(
-                  initialValue: _status,
+                  value: _status,
                   decoration: const InputDecoration(labelText: 'Return condition'),
                   items: const [
                     DropdownMenuItem(value: 'returned', child: Text('Normal return')),
