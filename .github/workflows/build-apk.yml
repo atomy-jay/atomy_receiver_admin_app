@@ -1,0 +1,59 @@
+name: Build Android APK
+
+# Builds a release APK in the cloud — no local Flutter/Android toolchain needed.
+# Trigger: every push to main, or manually via the Actions tab ("Run workflow").
+# Download: Actions run → Artifacts → "atomy-receiver-admin-apk".
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: "3.24.5"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # The Gradle wrapper jar/scripts are not committed. Generate them in an
+      # empty dir (so the Flutter settings.gradle is NOT evaluated — that would
+      # need a Flutter SDK path), then copy only the wrapper artifacts in.
+      - name: Ensure Gradle wrapper
+        run: |
+          if [ ! -f android/gradlew ] || [ ! -f android/gradle/wrapper/gradle-wrapper.jar ]; then
+            tmp="$(mktemp -d)"
+            ( cd "$tmp" && gradle wrapper --gradle-version 8.10.2 --distribution-type all )
+            mkdir -p android/gradle/wrapper
+            cp "$tmp/gradlew" android/gradlew
+            cp "$tmp/gradlew.bat" android/gradlew.bat 2>/dev/null || true
+            cp "$tmp/gradle/wrapper/gradle-wrapper.jar" android/gradle/wrapper/gradle-wrapper.jar
+            chmod +x android/gradlew
+          fi
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: atomy-receiver-admin-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-file-found: error
+          retention-days: 30
