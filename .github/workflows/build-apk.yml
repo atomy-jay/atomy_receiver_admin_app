@@ -22,11 +22,14 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      # The app uses Color.withValues() (Flutter 3.27+) and CardThemeData
+      # (Flutter 3.29+), and its Gradle config (AGP 8.7.3 / Gradle 8.10.2 /
+      # Kotlin 2.1.0) matches the Flutter 3.29 template — so pin 3.29.
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: "3.24.5"
+          flutter-version: "3.29.0"
           cache: true
 
       - name: Install dependencies

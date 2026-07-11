@@ -33,5 +33,5 @@ git push -u origin main
 ## 참고
 
 - 현재 릴리스 APK 는 **debug 서명**을 사용합니다. 내부 행사 사이드로드 설치용으로는 문제없지만, Google Play 정식 배포에는 별도 keystore 서명이 필요합니다.
-- 빌드는 Flutter `3.24.5` (stable) 기준입니다. `.github/workflows/build-apk.yml` 에서 버전 변경 가능.
+- 빌드는 Flutter `3.29.0` (stable) 기준입니다. `.github/workflows/build-apk.yml` 에서 버전 변경 가능.
 - Gradle wrapper 파일이 저장소에 없어도 워크플로가 빌드 시 자동 생성합니다.
