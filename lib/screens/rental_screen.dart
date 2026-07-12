@@ -49,6 +49,10 @@ class _RentalScreenState extends State<RentalScreen> {
       setState(() {
         _registration = result['registration'] as Map<String, dynamic>?;
         _activeRental = result['active_rental'] as Map<String, dynamic>?;
+        // Pre-fill the next available receiver so the number is visible.
+        if (_activeRental == null) {
+          _receiver.text = (result['next_receiver_no'] ?? '').toString();
+        }
       });
     } catch (error) {
       _show(error.toString(), true);
@@ -58,14 +62,17 @@ class _RentalScreenState extends State<RentalScreen> {
   }
 
   Future<void> _rent() async {
-    if (_registration == null || _receiver.text.trim().isEmpty) return;
+    // Empty receiver number = auto-assign the lowest available receiver.
+    if (_registration == null) return;
     setState(() => _busy = true);
     try {
-      await widget.api.rent(
+      final result = await widget.api.rent(
         registrationId: _registration!['id'].toString(),
         receiverNo: _receiver.text.trim(),
       );
-      _show('Receiver ${_receiver.text.trim()} rented successfully.', false);
+      final assigned =
+          (result['rental']?['receiver_no'] ?? _receiver.text.trim()).toString();
+      _show('Receiver $assigned rented successfully.', false);
       setState(() {
         _registration = null;
         _activeRental = null;
@@ -164,8 +171,8 @@ class _RentalScreenState extends State<RentalScreen> {
                     controller: _receiver,
                     keyboardType: TextInputType.number,
                     decoration: const InputDecoration(
-                      labelText: 'Receiver number',
-                      hintText: '128',
+                      labelText: 'Receiver number (blank = auto-assign)',
+                      hintText: 'Auto-assign next available',
                       prefixIcon: Icon(Icons.headphones_outlined),
                     ),
                   ),

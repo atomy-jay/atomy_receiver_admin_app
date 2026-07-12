@@ -55,6 +55,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final languages = (_data?['languages'] as List<dynamic>? ?? []);
     final recent = (_data?['recent'] as List<dynamic>? ?? []);
+    final receivers = (_data?['receivers'] as List<dynamic>? ?? []);
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
@@ -93,6 +94,70 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Text(_error!, style: const TextStyle(color: dangerRed)),
           ],
           const SizedBox(height: 18),
+          SectionCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Receiver Status', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 6),
+                const Text('Tap a receiver to see details.', style: TextStyle(color: mutedText, fontSize: 13)),
+                const SizedBox(height: 14),
+                if (receivers.isEmpty)
+                  const Text('No receivers yet.', style: TextStyle(color: mutedText))
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: receivers.map((r) {
+                      final item = r as Map<String, dynamic>;
+                      final status = item['status']?.toString() ?? 'available';
+                      final rental = item['active_rental'] as Map<String, dynamic>?;
+                      final rented = status == 'rented';
+                      final issue = status == 'damaged' || status == 'lost' || status == 'maintenance';
+                      final bg = rented
+                          ? Colors.white
+                          : (issue ? dangerRed.withValues(alpha: 0.14) : const Color(0xFF0B1828));
+                      final numColor = rented ? const Color(0xFF08111F) : Colors.white;
+                      final subColor = rented ? atomyBlue : (issue ? dangerRed : mutedText);
+                      return InkWell(
+                        onTap: () => _showReceiverDetail(item),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: 78,
+                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                          decoration: BoxDecoration(
+                            color: bg,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: rented ? atomyBlue : (issue ? dangerRed : const Color(0xFF2A3E55)),
+                              width: rented ? 1.5 : 1,
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Text(item['receiver_no']?.toString() ?? '-',
+                                  style: TextStyle(fontWeight: FontWeight.w800, color: numColor)),
+                              const SizedBox(height: 2),
+                              Text(
+                                rented ? (rental?['full_name']?.toString() ?? 'rented') : status,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: subColor,
+                                  fontWeight: rented ? FontWeight.w700 : FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           SectionCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,6 +224,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 18),
             const Center(child: CircularProgressIndicator()),
           ],
+        ],
+      ),
+    );
+  }
+
+  void _showReceiverDetail(Map<String, dynamic> receiver) {
+    final rental = receiver['active_rental'] as Map<String, dynamic>?;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: navyCard,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Receiver ${receiver['receiver_no'] ?? '-'}',
+                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 12),
+            if (rental != null) ...[
+              _detailRow('Name', rental['full_name']),
+              _detailRow('Member no.', rental['member_no']),
+              _detailRow('Language', rental['language']),
+              _detailRow('Email', rental['email']),
+              _detailRow('Phone', rental['phone']),
+            ] else
+              Text('Status: ${receiver['status'] ?? '-'} · no current renter',
+                  style: const TextStyle(color: mutedText)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 110, child: Text(label, style: const TextStyle(color: mutedText))),
+          Expanded(
+            child: Text(
+              (value == null || value.toString().isEmpty) ? '-' : value.toString(),
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
